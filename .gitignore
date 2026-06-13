@@ -1,0 +1,45 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build
+target/
+dist/
+build/
+*.class
+*.jar
+*.war
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Maven
+.m2/
+pom.xml.tag
+pom.xml.asc
+pom.xml.releaseBackup
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Mobile
+mobile/ios/Pods/
+mobile/android/.gradle/
+mobile/android/build/
+mobile/.cache/
+
+# OS
+.DS_Store
+Thumbs.db

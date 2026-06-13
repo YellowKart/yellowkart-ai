@@ -1,0 +1,40 @@
+{
+  "name": "yellowkart-mobile",
+  "version": "1.0.0",
+  "description": "YellowKart Mobile App - React Native",
+  "main": "index.js",
+  "scripts": {
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "start": "react-native start",
+    "test": "jest",
+    "lint": "eslint .",
+    "build:android": "cd android && ./gradlew assembleRelease",
+    "build:ios": "cd ios && xcodebuild -workspace YellowKart.xcworkspace -scheme YellowKart -configuration Release"
+  },
+  "dependencies": {
+    "react": "18.2.0",
+    "react-native": "0.72.0",
+    "react-navigation": "^6.1.8",
+    "react-navigation-bottom-tabs": "^6.5.11",
+    "react-navigation-native-stack": "^6.9.11",
+    "react-navigation-stack": "^5.14.5",
+    "@react-native-async-storage/async-storage": "^1.17.11",
+    "redux": "^4.2.1",
+    "react-redux": "^8.1.2",
+    "redux-thunk": "^2.4.2",
+    "axios": "^1.4.0",
+    "stripe": "^13.1.0",
+    "react-native-stripe-sdk": "^0.27.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.21.0",
+    "@babel/preset-env": "^7.21.0",
+    "@babel/preset-react": "^7.18.6",
+    "@babel/runtime": "^7.21.0",
+    "@react-native-community/eslint-config": "^3.2.0",
+    "eslint": "^8.40.0",
+    "jest": "^29.5.0",
+    "metro-react-native-babel-preset": "^0.73.9"
+  }
+}
