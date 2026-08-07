@@ -102,6 +102,7 @@ function Navbar() {
 
           <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
             <NavButton onClick={() => navigate('/products')}>Products</NavButton>
+            <NavButton onClick={() => navigate('/requirements')}>Requirements</NavButton>
 
             <NavButton
               onClick={() => navigate('/cart')}

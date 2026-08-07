@@ -8,6 +8,16 @@ const OrdersContainer = styled(Box)`
   padding: 40px 20px;
 `
 
+function normalizeOrder(entry: any) {
+  if (entry?.order) {
+    return {
+      ...entry.order,
+      items: entry.items || [],
+    }
+  }
+  return { ...entry, items: entry.items || [] }
+}
+
 function OrdersPage() {
   const user = useSelector((state: any) => state.auth.user)
   const [orders, setOrders] = useState<any[]>([])
@@ -20,7 +30,8 @@ function OrdersPage() {
   const fetchOrders = async () => {
     try {
       const response = await axios.get(`http://localhost:8004/api/orders/user/${user.id}`)
-      setOrders(response.data)
+      const normalized = (response.data || []).map(normalizeOrder)
+      setOrders(normalized)
     } catch (error) {
       console.error('Error fetching orders:', error)
     } finally {
@@ -63,6 +74,7 @@ function OrdersPage() {
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Order Number</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 'bold' }}>Amount</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Items</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
                 </TableRow>
@@ -72,7 +84,14 @@ function OrdersPage() {
                   <TableRow key={order.id}>
                     <TableCell>{order.orderNumber}</TableCell>
                     <TableCell align="right" sx={{ color: '#ff9900', fontWeight: 'bold' }}>
-                      ${order.totalAmount}
+                      ₹{order.totalAmount}
+                    </TableCell>
+                    <TableCell>
+                      {order.items?.length
+                        ? order.items
+                            .map((item: any) => `${item.productName}×${item.quantity}`)
+                            .join(', ')
+                        : order.itemCount || '—'}
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -81,7 +100,9 @@ function OrdersPage() {
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : '—'}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -84,9 +84,17 @@ function HomePage() {
           size="large"
           endIcon={<ArrowForwardIcon />}
           onClick={() => navigate('/products')}
-          sx={{ backgroundColor: '#232f3e' }}
+          sx={{ backgroundColor: '#232f3e', mr: 2 }}
         >
           Shop Now
+        </Button>
+        <Button
+          variant="outlined"
+          size="large"
+          onClick={() => navigate('/requirements')}
+          sx={{ borderColor: 'white', color: 'white' }}
+        >
+          Requirements list
         </Button>
       </BannerContainer>
 

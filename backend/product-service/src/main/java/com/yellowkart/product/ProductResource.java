@@ -6,7 +6,11 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Path("/api/products")
 @Produces(MediaType.APPLICATION_JSON)
@@ -17,6 +21,29 @@ public class ProductResource {
     @GET
     public List<Product> listAll() {
         return Product.listAll();
+    }
+
+    @GET
+    @Path("/by-category")
+    public List<CategoryGroup> listByCategory() {
+        List<Product> products = Product.list("active", true);
+        if (products.isEmpty()) {
+            products = Product.listAll();
+        }
+        Map<String, List<Product>> grouped = new LinkedHashMap<>();
+        for (Product product : products) {
+            String category = product.category == null || product.category.isBlank()
+                    ? "Other"
+                    : product.category;
+            grouped.computeIfAbsent(category, key -> new ArrayList<>()).add(product);
+        }
+        List<CategoryGroup> result = new ArrayList<>();
+        for (Map.Entry<String, List<Product>> entry : grouped.entrySet()) {
+            entry.getValue().sort(Comparator.comparing(p -> p.name == null ? "" : p.name));
+            result.add(new CategoryGroup(entry.getKey(), entry.getValue()));
+        }
+        result.sort(Comparator.comparing(g -> g.category));
+        return result;
     }
 
     @GET
@@ -55,6 +82,8 @@ public class ProductResource {
         product.price = updatedProduct.price;
         product.stock = updatedProduct.stock;
         product.category = updatedProduct.category;
+        product.brand = updatedProduct.brand;
+        product.unit = updatedProduct.unit;
         product.imageUrl = updatedProduct.imageUrl;
         product.persist();
         return Response.ok(product).build();

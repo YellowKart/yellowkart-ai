@@ -25,7 +25,8 @@
     "redux-thunk": "^2.4.2",
     "axios": "^1.4.0",
     "stripe": "^13.1.0",
-    "react-native-stripe-sdk": "^0.27.0"
+    "react-native-stripe-sdk": "^0.27.0",
+    "react-native-image-picker": "^7.1.2"
   },
   "devDependencies": {
     "@babel/core": "^7.21.0",

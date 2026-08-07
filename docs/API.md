@@ -20,9 +20,11 @@ The YellowKart e-commerce platform consists of 6 microservices built with Quarku
 - Product catalog management
 - Product search and filtering
 - Category management
+- Brand-aware requirements listing
 
 **Endpoints:**
 - `GET /api/products` - List all products
+- `GET /api/products/by-category` - Products grouped by category (for requirements list)
 - `GET /api/products/{id}` - Get product by ID
 - `GET /api/products/category/{category}` - Get products by category
 - `POST /api/products` - Create product
@@ -42,15 +44,29 @@ The YellowKart e-commerce platform consists of 6 microservices built with Quarku
 
 ### 4. Order Service (Port 8004)
 - Order creation and management
+- Bulk requirements orders with line items
 - Order history
 - Order status tracking
 
 **Endpoints:**
 - `GET /api/orders` - List all orders
-- `GET /api/orders/{id}` - Get order by ID
-- `GET /api/orders/user/{userId}` - Get orders by user
+- `GET /api/orders/{id}` - Get order by ID (includes line items)
+- `GET /api/orders/user/{userId}` - Get orders by user (includes line items)
 - `POST /api/orders` - Create order
+- `POST /api/orders/bulk` - Create order from requirements list lines
 - `PUT /api/orders/{id}` - Update order
+
+**Bulk order body:**
+```json
+{
+  "userId": 1,
+  "shippingAddress": "Site address",
+  "paymentMethod": "COD",
+  "items": [
+    { "productId": 1, "productName": "OPC Cement 53 Grade 50kg", "brand": "UltraTech", "unitPrice": 420, "quantity": 10 }
+  ]
+}
+```
 
 ### 5. Payment Service (Port 8005)
 - Payment processing
@@ -66,6 +82,23 @@ The YellowKart e-commerce platform consists of 6 microservices built with Quarku
 - Email notifications
 - Order updates
 - Shipping notifications
+
+### 7. AI Service (Port 8007)
+- Multilingual product suggestions (text / image / voice)
+- Handwritten requirements list OCR + product mapping (all Indian languages)
+
+**Endpoints:**
+- `GET /api/ai/health` - Health and provider mode
+- `POST /api/ai/suggest/text` - Suggest from text
+- `POST /api/ai/suggest/image` - Suggest from image
+- `POST /api/ai/suggest/voice` - Suggest from voice/transcript
+- `POST /api/ai/suggest/list-image` - Extract handwritten list lines and map each to catalog products
+
+**list-image:** multipart `file` (required), `hint` (optional), `limit` (per-line suggestions). Set `OPENAI_API_KEY` for Vision OCR; stub mode works without it.
+
+## Clients
+- Web: `/requirements` — category-wise qty form + handwritten upload
+- Mobile (Android/iOS): Requirements tab — same flow; camera/gallery via `react-native-image-picker` (add camera/photo library permissions in native projects)
 
 ## Database Schema
 
@@ -98,12 +131,28 @@ CREATE TABLE products (
   price DECIMAL(10, 2),
   stock INT,
   category VARCHAR(100),
+  brand VARCHAR(100),
+  unit VARCHAR(50),
   image_url VARCHAR(500),
   rating DECIMAL(3, 2) DEFAULT 0,
   reviews INT DEFAULT 0,
   active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Order Items Table
+```sql
+CREATE TABLE order_items (
+  id BIGSERIAL PRIMARY KEY,
+  order_id BIGINT,
+  product_id BIGINT,
+  product_name VARCHAR(255),
+  brand VARCHAR(100),
+  quantity INT,
+  unit_price DECIMAL(10, 2),
+  line_total DECIMAL(10, 2)
 );
 ```
 
@@ -117,6 +166,7 @@ CREATE TABLE orders (
   status VARCHAR(50),
   shipping_address VARCHAR(255),
   payment_method VARCHAR(50),
+  item_count INT,
   order_date TIMESTAMP,
   delivery_date TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
