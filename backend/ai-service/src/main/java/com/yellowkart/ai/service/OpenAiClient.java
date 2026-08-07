@@ -867,7 +867,7 @@ public class OpenAiClient {
         response.brand = request.brand;
         response.websiteUrl = request.websiteUrl;
         response.usedExternalAi = false;
-        response.notes = "stub heuristic product-URL filter (OpenAI not configured)";
+        response.notes = "heuristic product-URL filter (AI unavailable — top up OpenAI credits for full extraction)";
         response.inputUrlCount = request.urls.size();
 
         for (String url : request.urls) {
@@ -890,15 +890,46 @@ public class OpenAiClient {
                     ? "Electrical Materials" : request.category;
             product.currency = "INR";
             product.price = null;
-            String slug = url.replaceAll("/$", "");
-            int slash = slug.lastIndexOf('/');
-            slug = slash >= 0 ? slug.substring(slash + 1) : slug;
+
+            String path = url.replaceAll("^https?://[^/]+", "").replaceAll("[?#].*$", "");
+            String[] parts = path.replaceAll("^/+|/+$", "").split("/");
+            String slug = parts.length > 0 ? parts[parts.length - 1] : "product";
+            String catalogNo = slug;
+
+            // /p/{slug}/{id} → name from slug, catalog from id
+            for (int i = 0; i < parts.length - 1; i++) {
+                if ("p".equalsIgnoreCase(parts[i]) && i + 1 < parts.length) {
+                    String candidate = parts[i + 1];
+                    if (!candidate.isBlank() && !candidate.matches("^\\d+$")) {
+                        slug = candidate;
+                    }
+                    if (i + 2 < parts.length && parts[i + 2].matches("^\\d+$")) {
+                        catalogNo = parts[i + 2];
+                    }
+                    break;
+                }
+            }
+            // /p-12345 after descriptive slug
+            if (parts.length >= 2 && parts[parts.length - 1].matches("(?i)p-\\d+")) {
+                catalogNo = parts[parts.length - 1].replaceAll("(?i)^p-", "");
+                slug = parts[parts.length - 2];
+            }
+            if (path.matches("(?i).*/id/\\d+.*")) {
+                catalogNo = path.replaceAll("(?i).*/id/(\\d+).*", "$1");
+            }
+
             slug = slug.replaceAll("(?i)\\.html?", "");
-            product.catalogNo = slug;
-            product.sku = slug;
-            product.name = (request.brand == null ? "" : request.brand + " ")
-                    + slug.replace('-', ' ').replace('_', ' ');
+            product.catalogNo = catalogNo;
+            product.sku = catalogNo;
+            String pretty = slug.replace('-', ' ').replace('_', ' ').trim();
+            product.name = (request.brand == null ? "" : request.brand + " ") + pretty;
+            if (catalogNo != null && !product.name.contains(catalogNo)) {
+                product.name = product.name + " (" + catalogNo + ")";
+            }
             product.description = "Imported from " + url;
+            if (parts.length > 0) {
+                product.subcategory = parts[0].replace('-', ' ');
+            }
             response.products.add(product);
         }
         response.selectedUrlCount = response.products.size();
