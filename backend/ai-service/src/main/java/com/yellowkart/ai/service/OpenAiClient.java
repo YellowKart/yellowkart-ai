@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yellowkart.ai.dto.AiInterpretation;
 import com.yellowkart.ai.dto.HandwrittenListExtraction;
 import com.yellowkart.ai.dto.HandwrittenListItem;
+import com.yellowkart.ai.dto.WebsiteCatalogProduct;
+import com.yellowkart.ai.dto.WebsiteCatalogRequest;
+import com.yellowkart.ai.dto.WebsiteCatalogResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
@@ -678,6 +681,236 @@ public class OpenAiClient {
             return content.substring(start, end + 1);
         }
         throw new IllegalStateException("Model response did not contain JSON: " + content);
+    }
+
+    private static final String WEBSITE_CATALOG_SYSTEM_PROMPT = """
+            You are YellowKart's catalog ingestion assistant for Indian electrical / construction brands.
+            Given a brand name and a list of URLs crawled from that brand's website sitemap, decide which
+            URLs are individual PRODUCT pages (not blogs, about, careers, category indexes, PDF-only
+            investor docs, or store locators) and extract catalog fields.
+            Return ONLY valid JSON:
+            {
+              "notes": "short note about what you selected",
+              "products": [
+                {
+                  "name": "Buyer-facing product name including brand when natural",
+                  "catalogNo": "SKU / cat.no / product id if inferable from URL or empty string",
+                  "sku": "same as catalogNo when unknown difference",
+                  "description": "one short sentence",
+                  "price": null,
+                  "currency": "INR",
+                  "category": "Electrical Materials",
+                  "subcategory": "Switches or empty",
+                  "imageUrl": "",
+                  "sourceUrl": "exact URL from the input list",
+                  "attributes": { "model": optional }
+                }
+              ]
+            }
+            Rules:
+            - Only include true product detail pages.
+            - Prefer catalogNo from URL path tokens (numeric ids, p-12345, sku-like segments).
+            - price must be null unless clearly present in the URL text (almost never).
+            - Do not invent prices.
+            - Keep names concise and retail-like.
+            - Respect maxProducts if provided.
+            - This must work for ANY brand (Havells, Polycab, GM Modular, Goldmedal, Schneider, etc.)
+              without brand-specific hardcoding.
+            """;
+
+    public WebsiteCatalogResponse extractWebsiteCatalog(WebsiteCatalogRequest request) {
+        WebsiteCatalogResponse response = new WebsiteCatalogResponse();
+        response.brand = request == null ? null : request.brand;
+        response.websiteUrl = request == null ? null : request.websiteUrl;
+        response.inputUrlCount = request == null || request.urls == null ? 0 : request.urls.size();
+
+        if (request == null || request.urls == null || request.urls.isEmpty()) {
+            response.notes = "No URLs provided";
+            return response;
+        }
+
+        int max = request.maxProducts == null || request.maxProducts < 1
+                ? 400
+                : Math.min(request.maxProducts, 2000);
+
+        if (isConfigured()) {
+            try {
+                List<String> urls = request.urls.stream()
+                        .filter(u -> u != null && !u.isBlank())
+                        .distinct()
+                        .limit(Math.max(max * 3L, 120))
+                        .toList();
+                // Chunk so prompts stay within model context.
+                int chunkSize = 80;
+                for (int i = 0; i < urls.size() && response.products.size() < max; i += chunkSize) {
+                    List<String> chunk = urls.subList(i, Math.min(i + chunkSize, urls.size()));
+                    WebsiteCatalogResponse part = callWebsiteCatalogExtract(request, chunk, max - response.products.size());
+                    response.usedExternalAi = true;
+                    if (part.notes != null && response.notes == null) {
+                        response.notes = part.notes;
+                    }
+                    for (WebsiteCatalogProduct product : part.products) {
+                        if (response.products.size() >= max) {
+                            break;
+                        }
+                        if (product != null && product.sourceUrl != null && product.name != null) {
+                            response.products.add(product);
+                        }
+                    }
+                }
+                response.selectedUrlCount = response.products.size();
+                if (response.notes == null || response.notes.isBlank()) {
+                    response.notes = "AI selected product pages from sitemap URLs";
+                }
+                return response;
+            } catch (Exception e) {
+                LOG.error("Website catalog AI extract failed, using heuristic fallback", e);
+                if (!stubEnabled) {
+                    throw new IllegalStateException("Website catalog extract failed: " + e.getMessage(), e);
+                }
+            }
+        } else if (!stubEnabled) {
+            throw new IllegalStateException("OPENAI_API_KEY is required for website catalog extraction");
+        }
+
+        return stubWebsiteCatalog(request, max);
+    }
+
+    private WebsiteCatalogResponse callWebsiteCatalogExtract(WebsiteCatalogRequest request,
+                                                             List<String> urls,
+                                                             int remaining)
+            throws Exception {
+        ObjectNode root = mapper.createObjectNode();
+        root.put("model", chatModel);
+        root.put("temperature", 0.1);
+        ArrayNode messages = root.putArray("messages");
+
+        ObjectNode system = messages.addObject();
+        system.put("role", "system");
+        system.put("content", WEBSITE_CATALOG_SYSTEM_PROMPT);
+
+        ObjectNode user = messages.addObject();
+        user.put("role", "user");
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("Brand: ").append(nullToEmpty(request.brand)).append('\n');
+        prompt.append("Website: ").append(nullToEmpty(request.websiteUrl)).append('\n');
+        prompt.append("Default category: ")
+                .append(request.category == null || request.category.isBlank()
+                        ? "Electrical Materials" : request.category)
+                .append('\n');
+        prompt.append("maxProducts for this chunk: ").append(Math.max(1, remaining)).append('\n');
+        prompt.append("URLs:\n");
+        for (String url : urls) {
+            prompt.append("- ").append(url).append('\n');
+        }
+        prompt.append("Return JSON only.");
+        user.put("content", prompt.toString());
+
+        JsonNode body = postJson("/chat/completions", root);
+        String contentText = body.path("choices").path(0).path("message").path("content").asText("");
+        return parseWebsiteCatalogJson(contentText, request);
+    }
+
+    private WebsiteCatalogResponse parseWebsiteCatalogJson(String contentText, WebsiteCatalogRequest request)
+            throws Exception {
+        String json = extractJsonObject(contentText);
+        JsonNode node = mapper.readTree(json);
+        WebsiteCatalogResponse response = new WebsiteCatalogResponse();
+        response.brand = request.brand;
+        response.websiteUrl = request.websiteUrl;
+        response.notes = textOr(node, "notes", "");
+        response.usedExternalAi = true;
+        JsonNode products = node.get("products");
+        if (products != null && products.isArray()) {
+            for (JsonNode p : products) {
+                WebsiteCatalogProduct product = new WebsiteCatalogProduct();
+                product.name = textOr(p, "name", null);
+                product.catalogNo = emptyToNull(textOr(p, "catalogNo", ""));
+                product.sku = emptyToNull(textOr(p, "sku", product.catalogNo == null ? "" : product.catalogNo));
+                product.description = emptyToNull(textOr(p, "description", ""));
+                if (p.has("price") && !p.get("price").isNull()) {
+                    try {
+                        product.price = p.get("price").asDouble();
+                    } catch (Exception ignored) {
+                        product.price = null;
+                    }
+                }
+                product.currency = textOr(p, "currency", "INR");
+                product.category = textOr(p, "category",
+                        request.category == null || request.category.isBlank()
+                                ? "Electrical Materials" : request.category);
+                product.subcategory = emptyToNull(textOr(p, "subcategory", ""));
+                product.imageUrl = emptyToNull(textOr(p, "imageUrl", ""));
+                product.sourceUrl = emptyToNull(textOr(p, "sourceUrl", ""));
+                JsonNode attrs = p.get("attributes");
+                if (attrs != null && attrs.isObject()) {
+                    attrs.fields().forEachRemaining(e -> {
+                        if (e.getValue() != null && e.getValue().isValueNode()) {
+                            String v = e.getValue().asText("");
+                            if (!v.isBlank()) {
+                                product.attributes.put(e.getKey(), v);
+                            }
+                        }
+                    });
+                }
+                if (product.name != null && !product.name.isBlank() && product.sourceUrl != null) {
+                    response.products.add(product);
+                }
+            }
+        }
+        response.selectedUrlCount = response.products.size();
+        return response;
+    }
+
+    private WebsiteCatalogResponse stubWebsiteCatalog(WebsiteCatalogRequest request, int max) {
+        WebsiteCatalogResponse response = new WebsiteCatalogResponse();
+        response.brand = request.brand;
+        response.websiteUrl = request.websiteUrl;
+        response.usedExternalAi = false;
+        response.notes = "stub heuristic product-URL filter (OpenAI not configured)";
+        response.inputUrlCount = request.urls.size();
+
+        for (String url : request.urls) {
+            if (response.products.size() >= max) {
+                break;
+            }
+            String lower = url.toLowerCase(Locale.ROOT);
+            boolean productish = lower.contains("/p/")
+                    || lower.contains("/product/")
+                    || lower.contains("/products/")
+                    || lower.contains("portfolio_page")
+                    || lower.contains("/catalog/product/")
+                    || lower.matches(".*(/p-\\d+).*");
+            if (!productish) {
+                continue;
+            }
+            WebsiteCatalogProduct product = new WebsiteCatalogProduct();
+            product.sourceUrl = url;
+            product.category = request.category == null || request.category.isBlank()
+                    ? "Electrical Materials" : request.category;
+            product.currency = "INR";
+            product.price = null;
+            String slug = url.replaceAll("/$", "");
+            int slash = slug.lastIndexOf('/');
+            slug = slash >= 0 ? slug.substring(slash + 1) : slug;
+            slug = slug.replaceAll("(?i)\\.html?", "");
+            product.catalogNo = slug;
+            product.sku = slug;
+            product.name = (request.brand == null ? "" : request.brand + " ")
+                    + slug.replace('-', ' ').replace('_', ' ');
+            product.description = "Imported from " + url;
+            response.products.add(product);
+        }
+        response.selectedUrlCount = response.products.size();
+        return response;
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
+    }
+
+    private static String emptyToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private String trimSlash(String url) {

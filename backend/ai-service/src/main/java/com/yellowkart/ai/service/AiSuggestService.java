@@ -7,6 +7,8 @@ import com.yellowkart.ai.dto.ListLineSuggestion;
 import com.yellowkart.ai.dto.ListSuggestResponse;
 import com.yellowkart.ai.dto.ProductSuggestion;
 import com.yellowkart.ai.dto.SuggestResponse;
+import com.yellowkart.ai.dto.WebsiteCatalogRequest;
+import com.yellowkart.ai.dto.WebsiteCatalogResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -76,6 +78,19 @@ public class AiSuggestService {
             response.lines.add(line);
         }
         return response;
+    }
+
+    public WebsiteCatalogResponse extractWebsiteCatalog(WebsiteCatalogRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("request is required");
+        }
+        if (request.brand == null || request.brand.isBlank()) {
+            throw new IllegalArgumentException("brand is required");
+        }
+        if (request.urls == null || request.urls.isEmpty()) {
+            throw new IllegalArgumentException("urls are required (crawl the brand sitemap first)");
+        }
+        return openAiClient.extractWebsiteCatalog(request);
     }
 
     public String providerStatus() {

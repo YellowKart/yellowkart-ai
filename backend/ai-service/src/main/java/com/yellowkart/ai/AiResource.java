@@ -3,6 +3,8 @@ package com.yellowkart.ai;
 import com.yellowkart.ai.dto.ListSuggestResponse;
 import com.yellowkart.ai.dto.SuggestResponse;
 import com.yellowkart.ai.dto.TextSuggestRequest;
+import com.yellowkart.ai.dto.WebsiteCatalogRequest;
+import com.yellowkart.ai.dto.WebsiteCatalogResponse;
 import com.yellowkart.ai.service.AiSuggestService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -106,6 +108,14 @@ public class AiResource {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to process list image: " + e.getMessage(), e);
         }
+    }
+
+    @POST
+    @Path("/catalog/website")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Extract catalog products from any brand website URL list (AI, brand-agnostic)")
+    public WebsiteCatalogResponse extractWebsiteCatalog(WebsiteCatalogRequest request) {
+        return aiSuggestService.extractWebsiteCatalog(request);
     }
 
     @POST
