@@ -41,6 +41,9 @@ function Footer() {
             <Typography variant="body2" sx={{ mb: 1 }}>
               <FooterLink href="/products">Products</FooterLink>
             </Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              <FooterLink href="/requirements">Requirements</FooterLink>
+            </Typography>
             <Typography variant="body2">
               <FooterLink href="#">Contact Us</FooterLink>
             </Typography>
