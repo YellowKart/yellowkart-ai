@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
   AppBar,
@@ -30,10 +30,11 @@ const LogoText = styled.div`
   color: #ff9900;
   margin-right: 20px;
   cursor: pointer;
+  flex-shrink: 0;
 `
 
 const SearchBox = styled(TextField)`
-  width: 300px;
+  width: min(300px, 40vw);
   margin: 0 20px;
   
   .MuiOutlinedInput-root {
@@ -46,15 +47,38 @@ const NavButton = styled(Button)`
   color: white !important;
   text-transform: none !important;
   font-size: 16px !important;
-  margin: 0 10px !important;
+  margin: 0 6px !important;
+  white-space: nowrap;
   
   &:hover {
     background-color: rgba(255, 153, 0, 0.1);
   }
 `
 
+const SecondaryBar = styled(Box)`
+  background-color: #37475a;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+`
+
+const SecondaryLink = styled(Button)<{ $active?: boolean }>`
+  color: ${(p) => (p.$active ? '#ff9900' : '#ffffff')} !important;
+  text-transform: none !important;
+  font-size: 14px !important;
+  font-weight: ${(p) => (p.$active ? 700 : 500)} !important;
+  min-width: auto !important;
+  padding: 8px 14px !important;
+  border-radius: 0 !important;
+  border-bottom: 2px solid ${(p) => (p.$active ? '#ff9900' : 'transparent')} !important;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: #ff9900 !important;
+  }
+`
+
 function Navbar() {
   const navigate = useNavigate()
+  const location = useLocation()
   const dispatch = useDispatch()
   const isLoggedIn = useSelector((state: any) => state.auth.isLoggedIn)
   const user = useSelector((state: any) => state.auth.user)
@@ -83,10 +107,20 @@ function Navbar() {
     handleMenuClose()
   }
 
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(`${path}/`)
+
+  const secondaryLinks = [
+    { label: 'Home', path: '/' },
+    { label: 'Products', path: '/products' },
+    { label: 'Requirements', path: '/requirements' },
+    ...(isLoggedIn ? [{ label: 'Orders', path: '/orders' }] : []),
+  ]
+
   return (
     <StyledAppBar position="static">
       <Container maxWidth="lg">
-        <Toolbar disableGutters>
+        <Toolbar disableGutters sx={{ flexWrap: 'wrap', gap: 1, py: 0.5 }}>
           <LogoText onClick={() => navigate('/')}>YellowKart</LogoText>
 
           <SearchBox
@@ -100,8 +134,7 @@ function Navbar() {
             }}
           />
 
-          <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
-            <NavButton onClick={() => navigate('/products')}>Products</NavButton>
+          <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
             <NavButton onClick={() => navigate('/requirements')}>Requirements</NavButton>
 
             <NavButton
@@ -136,6 +169,10 @@ function Navbar() {
                     navigate('/orders')
                     handleMenuClose()
                   }}>My Orders</MenuItem>
+                  <MenuItem onClick={() => {
+                    navigate('/requirements')
+                    handleMenuClose()
+                  }}>Requirements</MenuItem>
                   <MenuItem onClick={handleLogout}>Logout</MenuItem>
                 </Menu>
               </>
@@ -153,6 +190,30 @@ function Navbar() {
           </Box>
         </Toolbar>
       </Container>
+
+      <SecondaryBar>
+        <Container maxWidth="lg">
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              overflowX: 'auto',
+              py: 0.25,
+            }}
+          >
+            {secondaryLinks.map((link) => (
+              <SecondaryLink
+                key={link.path}
+                $active={isActive(link.path)}
+                onClick={() => navigate(link.path)}
+              >
+                {link.label}
+              </SecondaryLink>
+            ))}
+          </Box>
+        </Container>
+      </SecondaryBar>
     </StyledAppBar>
   )
 }
