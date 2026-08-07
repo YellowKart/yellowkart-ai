@@ -1,0 +1,16 @@
+# Render Blueprint for YellowKart AI API (used by the real buyer app)
+services:
+  - type: web
+    name: yellowkart-ai-service
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: cursor/ai-construction-product-suggest-3dfc
+    dockerfilePath: ./backend/ai-service/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/ai/health
+    envVars:
+      - key: AI_STUB_ENABLED
+        value: "true"
+      - key: OPENAI_API_KEY
+        sync: false
