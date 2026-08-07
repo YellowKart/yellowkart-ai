@@ -31,6 +31,16 @@ const HomeScreen = ({ navigation }: any) => {
         <Text style={styles.title}>YellowKart</Text>
       </View>
 
+      <TouchableOpacity
+        style={styles.requirementsBanner}
+        onPress={() => navigation.navigate('Requirements')}
+      >
+        <Text style={styles.requirementsTitle}>Requirements list</Text>
+        <Text style={styles.requirementsText}>
+          Order by category or upload a handwritten list (all Indian languages)
+        </Text>
+      </TouchableOpacity>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Categories</Text>
         <FlatList
@@ -80,6 +90,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF9900',
     padding: 20,
     alignItems: 'center',
+  },
+  requirementsBanner: {
+    margin: 15,
+    padding: 16,
+    backgroundColor: '#232F3E',
+    borderRadius: 10,
+  },
+  requirementsTitle: {
+    color: '#FF9900',
+    fontWeight: '800',
+    fontSize: 18,
+    marginBottom: 4,
+  },
+  requirementsText: {
+    color: '#F5F5F5',
+    fontSize: 13,
+    lineHeight: 18,
   },
   title: {
     fontSize: 28,

@@ -13,6 +13,7 @@ import OrdersPage from './pages/OrdersPage'
 import ProfilePage from './pages/ProfilePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import RequirementsPage from './pages/RequirementsPage'
 
 const theme = createTheme({
   palette: {
@@ -52,6 +53,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/products" element={<ProductListPage />} />
             <Route path="/products/:id" element={<ProductDetailPage />} />
+            <Route path="/requirements" element={<RequirementsPage />} />
             <Route path="/cart" element={<CartPage />} />
             {isLoggedIn && (
               <>

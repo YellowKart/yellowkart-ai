@@ -14,6 +14,8 @@ public class Product extends PanacheEntity {
     public BigDecimal price;
     public int stock;
     public String category;
+    public String brand;
+    public String unit;
     public String imageUrl;
     public double rating;
     public int reviews;
@@ -35,5 +37,12 @@ public class Product extends PanacheEntity {
         this.reviews = 0;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public Product(String name, String description, BigDecimal price, int stock, String category,
+                   String brand, String unit) {
+        this(name, description, price, stock, category);
+        this.brand = brand;
+        this.unit = unit;
     }
 }

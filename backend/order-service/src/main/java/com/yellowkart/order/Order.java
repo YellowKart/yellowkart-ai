@@ -15,6 +15,7 @@ public class Order extends PanacheEntity {
     public String status;
     public String shippingAddress;
     public String paymentMethod;
+    public int itemCount;
     public LocalDateTime orderDate;
     public LocalDateTime deliveryDate;
     public LocalDateTime createdAt;
