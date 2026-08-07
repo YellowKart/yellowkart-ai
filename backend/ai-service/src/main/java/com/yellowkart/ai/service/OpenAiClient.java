@@ -881,6 +881,29 @@ public class OpenAiClient {
                     || lower.contains("portfolio_page")
                     || lower.contains("/catalog/product/")
                     || lower.matches(".*(/p-\\d+).*");
+            // Many cable/industrial sites use /long-product-slug/ with no /product/ segment.
+            if (!productish) {
+                String pathOnly = lower.replaceAll("^https?://[^/]+", "").replaceAll("[?#].*$", "");
+                String[] segs = pathOnly.replaceAll("^/+|/+$", "").split("/");
+                if (segs.length == 1) {
+                    String slug = segs[0];
+                    boolean skip = slug.isBlank()
+                            || slug.contains("about")
+                            || slug.contains("contact")
+                            || slug.contains("career")
+                            || slug.contains("investor")
+                            || slug.contains("privacy")
+                            || slug.contains("blog")
+                            || slug.contains("news")
+                            || slug.contains("media")
+                            || slug.contains("sitemap")
+                            || slug.endsWith(".pdf")
+                            || slug.endsWith(".xml");
+                    if (!skip && slug.contains("-") && slug.length() >= 12) {
+                        productish = true;
+                    }
+                }
+            }
             if (!productish) {
                 continue;
             }
