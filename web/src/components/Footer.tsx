@@ -1,14 +1,14 @@
-import React from 'react'
-import { Box, Container, Grid, Typography, Link } from '@mui/material'
-import styled from 'styled-components'
-
+import { createLogger } from "../utils/logger";
+import React from 'react';
+import { Box, Container, Grid, Typography, Link } from '@mui/material';
+import styled from 'styled-components';
+const __ykLog = createLogger("Footer");
 const FooterContainer = styled(Box)`
   background-color: #232f3e;
   color: #ffffff;
   padding: 40px 0 20px;
   margin-top: 40px;
-`
-
+`;
 const FooterLink = styled(Link)`
   color: #ffffff !important;
   text-decoration: none !important;
@@ -16,15 +16,30 @@ const FooterLink = styled(Link)`
   &:hover {
     color: #ff9900 !important;
   }
-`
-
+`;
 function Footer() {
-  return (
-    <FooterContainer>
+  const __ykStart = Date.now();
+  __ykLog.info("FLOW_ENTER", {
+    op: "Footer.Footer"
+  });
+  try {
+    const __ykStart = Date.now();
+    const __ykOp = "Footer.Footer";
+    __ykLog.info("METHOD_START", {
+      op: __ykOp
+    });
+    let __ykOk = true;
+    try {
+      return <FooterContainer>
       <Container maxWidth="lg">
-        <Grid container spacing={4} sx={{ mb: 4 }}>
+        <Grid container spacing={4} sx={{
+            mb: 4
+          }}>
           <Grid item xs={12} sm={6} md={3}>
-            <Typography variant="h6" sx={{ color: '#ff9900', mb: 2 }}>
+            <Typography variant="h6" sx={{
+                color: '#ff9900',
+                mb: 2
+              }}>
               About Us
             </Typography>
             <Typography variant="body2">
@@ -32,16 +47,25 @@ function Footer() {
             </Typography>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Typography variant="h6" sx={{ color: '#ff9900', mb: 2 }}>
+            <Typography variant="h6" sx={{
+                color: '#ff9900',
+                mb: 2
+              }}>
               Quick Links
             </Typography>
-            <Typography variant="body2" sx={{ mb: 1 }}>
+            <Typography variant="body2" sx={{
+                mb: 1
+              }}>
               <FooterLink href="/">Home</FooterLink>
             </Typography>
-            <Typography variant="body2" sx={{ mb: 1 }}>
+            <Typography variant="body2" sx={{
+                mb: 1
+              }}>
               <FooterLink href="/products">Products</FooterLink>
             </Typography>
-            <Typography variant="body2" sx={{ mb: 1 }}>
+            <Typography variant="body2" sx={{
+                mb: 1
+              }}>
               <FooterLink href="/requirements">Requirements</FooterLink>
             </Typography>
             <Typography variant="body2">
@@ -49,13 +73,20 @@ function Footer() {
             </Typography>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Typography variant="h6" sx={{ color: '#ff9900', mb: 2 }}>
+            <Typography variant="h6" sx={{
+                color: '#ff9900',
+                mb: 2
+              }}>
               Customer Service
             </Typography>
-            <Typography variant="body2" sx={{ mb: 1 }}>
+            <Typography variant="body2" sx={{
+                mb: 1
+              }}>
               <FooterLink href="#">Help Center</FooterLink>
             </Typography>
-            <Typography variant="body2" sx={{ mb: 1 }}>
+            <Typography variant="body2" sx={{
+                mb: 1
+              }}>
               <FooterLink href="#">Track Order</FooterLink>
             </Typography>
             <Typography variant="body2">
@@ -63,13 +94,20 @@ function Footer() {
             </Typography>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Typography variant="h6" sx={{ color: '#ff9900', mb: 2 }}>
+            <Typography variant="h6" sx={{
+                color: '#ff9900',
+                mb: 2
+              }}>
               Legal
             </Typography>
-            <Typography variant="body2" sx={{ mb: 1 }}>
+            <Typography variant="body2" sx={{
+                mb: 1
+              }}>
               <FooterLink href="#">Privacy Policy</FooterLink>
             </Typography>
-            <Typography variant="body2" sx={{ mb: 1 }}>
+            <Typography variant="body2" sx={{
+                mb: 1
+              }}>
               <FooterLink href="#">Terms & Conditions</FooterLink>
             </Typography>
             <Typography variant="body2">
@@ -77,14 +115,37 @@ function Footer() {
             </Typography>
           </Grid>
         </Grid>
-        <Box sx={{ borderTop: '1px solid #444', pt: 2, textAlign: 'center' }}>
+        <Box sx={{
+            borderTop: '1px solid #444',
+            pt: 2,
+            textAlign: 'center'
+          }}>
           <Typography variant="body2">
             &copy; 2024 YellowKart. All rights reserved.
           </Typography>
         </Box>
       </Container>
-    </FooterContainer>
-  )
+    </FooterContainer>;
+    } catch (__ykErr) {
+      __ykOk = false;
+      __ykLog.error("METHOD_END", {
+        op: __ykOp,
+        status: "failure",
+        durationMs: Date.now() - __ykStart
+      });
+      throw __ykErr;
+    } finally {
+      if (__ykOk) __ykLog.info("METHOD_END", {
+        op: __ykOp,
+        status: "success",
+        durationMs: Date.now() - __ykStart
+      });
+    }
+  } finally {
+    __ykLog.info("FLOW_EXIT", {
+      op: "Footer.Footer",
+      durationMs: Date.now() - __ykStart
+    });
+  }
 }
-
-export default Footer
+export default Footer;

@@ -1,12 +1,12 @@
+import { createLogger } from '../utils/logger';
 import { API } from '../config';
-
+const __ykLog = createLogger("aiApi");
 export type ProductSuggestion = {
   id: number;
   name: string;
   brand?: string;
   confidence?: number;
 };
-
 export type ListLineSuggestion = {
   rawText: string;
   quantity?: number | null;
@@ -14,39 +14,101 @@ export type ListLineSuggestion = {
   brandHint?: string;
   suggestions: ProductSuggestion[];
 };
-
 export type ListSuggestResponse = {
   replyMessage?: string;
   detectedLanguageName?: string;
   lines: ListLineSuggestion[];
 };
-
-export async function suggestFromListImage(
-  uri: string,
-  hint?: string,
-  fileName = 'handwritten-list.jpg'
-): Promise<ListSuggestResponse> {
-  const form = new FormData();
-  form.append('file', {
-    uri,
-    type: 'image/jpeg',
-    name: fileName,
-  } as any);
-  if (hint) {
-    form.append('hint', hint);
-  }
-  form.append('limit', '5');
-
-  const response = await fetch(`${API.ai}/suggest/list-image`, {
-    method: 'POST',
-    body: form,
-    headers: {
-      Accept: 'application/json',
-    },
+const log = createLogger('mobile.aiApi');
+export async function suggestFromListImage(uri: string, hint?: string, fileName = 'handwritten-list.jpg'): Promise<ListSuggestResponse> {
+  const __ykStart = Date.now();
+  const __ykOp = "aiApi.suggestFromListImage";
+  __ykLog.info("METHOD_START", {
+    op: __ykOp
   });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || 'Failed to analyze handwritten list');
+  let __ykOk = true;
+  try {
+    return log.timeOperation('suggestFromListImage', async () => {
+      const __ykStart = Date.now();
+      const __ykOp = "aiApi.arrow";
+      __ykLog.info("METHOD_START", {
+        op: __ykOp
+      });
+      let __ykOk = true;
+      try {
+        const form = new FormData();
+        form.append('file', {
+          uri,
+          type: 'image/jpeg',
+          name: fileName
+        } as any);
+        if (hint) {
+          const __ykBlockStart1 = Date.now();
+          __ykLog.info("BLOCK_START", {
+            op: "aiApi#if1"
+          });
+          try {
+            form.append('hint', hint);
+          } finally {
+            __ykLog.info("BLOCK_END", {
+              op: "aiApi#if1",
+              durationMs: Date.now() - __ykBlockStart1
+            });
+          }
+        }
+        form.append('limit', '5');
+        const response = await fetch(`${API.ai}/suggest/list-image`, {
+          method: 'POST',
+          body: form,
+          headers: {
+            Accept: 'application/json'
+          }
+        });
+        if (!response.ok) {
+          const __ykBlockStart2 = Date.now();
+          __ykLog.info("BLOCK_START", {
+            op: "aiApi#if2"
+          });
+          try {
+            const text = await response.text();
+            throw new Error(text || 'Failed to analyze handwritten list');
+          } finally {
+            __ykLog.info("BLOCK_END", {
+              op: "aiApi#if2",
+              durationMs: Date.now() - __ykBlockStart2
+            });
+          }
+        }
+        return response.json();
+      } catch (__ykErr) {
+        __ykOk = false;
+        __ykLog.error("METHOD_END", {
+          op: __ykOp,
+          status: "failure",
+          durationMs: Date.now() - __ykStart
+        });
+        throw __ykErr;
+      } finally {
+        if (__ykOk) __ykLog.info("METHOD_END", {
+          op: __ykOp,
+          status: "success",
+          durationMs: Date.now() - __ykStart
+        });
+      }
+    });
+  } catch (__ykErr) {
+    __ykOk = false;
+    __ykLog.error("METHOD_END", {
+      op: __ykOp,
+      status: "failure",
+      durationMs: Date.now() - __ykStart
+    });
+    throw __ykErr;
+  } finally {
+    if (__ykOk) __ykLog.info("METHOD_END", {
+      op: __ykOp,
+      status: "success",
+      durationMs: Date.now() - __ykStart
+    });
   }
-  return response.json();
 }
