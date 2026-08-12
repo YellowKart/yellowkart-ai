@@ -25,12 +25,14 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import com.yellowkart.ai.logging.Traced;
 
 /**
  * OpenAI-first Vision + Whisper client with Indian language auto-detection
  * and localized replies (including slang / code-mixing like Hinglish).
  */
 @ApplicationScoped
+@Traced
 public class OpenAiClient {
 
     private static final Logger LOG = Logger.getLogger(OpenAiClient.class);

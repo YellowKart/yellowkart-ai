@@ -21,10 +21,12 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import com.yellowkart.ai.logging.Traced;
 
 @Path("/api/ai")
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "AI Suggestions", description = "Construction product suggestions via OpenAI Vision, Whisper, or text")
+@Traced
 public class AiResource {
 
     @Inject

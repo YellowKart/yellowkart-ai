@@ -15,8 +15,10 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.List;
 import java.util.Locale;
+import com.yellowkart.ai.logging.Traced;
 
 @ApplicationScoped
+@Traced
 public class AiSuggestService {
 
     @Inject
